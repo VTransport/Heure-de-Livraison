@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Suivi de Livraison - Viandex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 2em;
+            background-color: #f9f9f9;
+        }
+        #logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+        #emailInput {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <img src="logo_viandex.png" id="logo" alt="Logo Viandex">
+    <h2>Entrez votre courriel pour voir votre heure de livraison</h2>
+    <input type="email" id="emailInput" placeholder="exemple@courriel.com">
+    <button onclick="searchDelivery()">Chercher</button>
+    <div id="result"></div>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script>
+        let deliveryData = [];
+
+        function fetchExcel() {
+            fetch("clients.xlsx")
+                .then(res => res.arrayBuffer())
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: "array" });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    deliveryData = XLSX.utils.sheet_to_json(sheet);
+                    console.log("Fichier Excel chargé !");
+                })
+                .catch(err => {
+                    console.error("Erreur lors du chargement du fichier Excel :", err);
+                });
+        }
+
+        function searchDelivery() {
+            const email = document.getElementById("emailInput").value.trim().toLowerCase();
+            const resultDiv = document.getElementById("result");
+
+            if (!email || deliveryData.length === 0) {
+                resultDiv.innerText = "Veuillez entrer un courriel valide.";
+                return;
+            }
+
+            const found = deliveryData.find(entry =>
+                String(entry["Courriel"] || "").trim().toLowerCase() === email
+            );
+
+            if (found) {
+                resultDiv.innerHTML = `
+                    <strong>Votre livraison est prévue à : ${found["Heure et date d'arrivée du conducteur"]}</strong><br>
+                    <small>L’heure de livraison est approximative. Il se peut, selon certains facteurs, que votre commande arrive plus tôt ou avec un léger retard.</small><br><br>
+                    <b>Merci de faire affaire avec nous et bonne journée !</b>
+                `;
+            } else {
+                resultDiv.innerText = "Courriel non trouvé.";
+            }
+        }
+
+        fetchExcel();
+    </script>
+</body>
+</html>
